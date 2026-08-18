@@ -7,7 +7,7 @@
     <title><?= isset($title) ? $title : 'Dashboard E-Kos' ?></title>
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-    <link rel="stylesheet" href="<?= base_url('adminlte/plugins/fontawesome-free/css/all.min.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/fontawesome/css/all.min.css') ?>">
     <link rel="stylesheet" href="<?= base_url('adminlte/dist/css/adminlte.min.css') ?>">
 </head>
 
@@ -137,9 +137,11 @@
         </footer>
     </div>
 
-    <script src="<?= base_url('adminlte/plugins/jquery/jquery.min.js') ?>"></script>
+    <script src="<?= base_url('assets/jquery/jquery-3.7.1.min.js') ?>"></script>
     <script src="<?= base_url('adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
     <script src="<?= base_url('adminlte/dist/js/adminlte.min.js') ?>"></script>
+
+    <?= $this->renderSection('scripts') ?>
 </body>
 
 </html>

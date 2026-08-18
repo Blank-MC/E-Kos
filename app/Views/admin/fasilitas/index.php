@@ -17,6 +17,100 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+
+<!-- Custom CSS untuk Kotak Galeri Icon -->
+<style>
+    .icon-picker-grid {
+        max-height: 160px;
+        overflow-y: auto;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 8px;
+        background: #f8f9fa;
+    }
+
+    .icon-option-btn {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        font-size: 1.1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 2px;
+    }
+</style>
+
+<?php
+// Daftar icon yang lebih lengkap untuk berbagai kategori fasilitas
+$array_icon = [
+    // Umum & Properti
+    'fas fa-home',
+    'fas fa-building',
+    'fas fa-hotel',
+    'fas fa-warehouse',
+    'fas fa-city',
+    'fas fa-door-open',
+    'fas fa-door-closed',
+    'fas fa-key',
+    'fas fa-lock',
+    'fas fa-shield-alt',
+
+    // Perabotan & Kamar
+    'fas fa-bed',
+    'fas fa-couch',
+    'fas fa-chair',
+    'fas fa-table',
+    'fas fa-tv',
+    'fas fa-desktop',
+    'fas fa-lightbulb',
+    'fas fa-plug',
+    'fas fa-charging-station',
+
+    // Fasilitas Kebersihan & Dapur
+    'fas fa-wifi',
+    'fas fa-snowflake',
+    'fas fa-bath',
+    'fas fa-shower',
+    'fas fa-hot-tub',
+    'fas fa-utensils',
+    'fas fa-water',
+    'fas fa-tshirt',
+    'fas fa-broom',
+    'fas fa-trash',
+    'fas fa-soap',
+    'fas fa-sink',
+    'fas fa-fan',
+    'fas fa-fire-extinguisher',
+
+    // Kendaraan & Area Luar
+    'fas fa-car',
+    'fas fa-motorcycle',
+    'fas fa-parking',
+    'fas fa-bicycle',
+    'fas fa-road',
+    'fas fa-swimming-pool',
+    'fas fa-dumbbell',
+    'fas fa-tree',
+    'fas fa-umbrella-beach',
+
+    // Keamanan & Utilitas Tambahan
+    'fas fa-video',
+    'fas fa-camera',
+    'fas fa-bolt',
+    'fas fa-wifi',
+    'fas fa-signal',
+    'fas fa-hammer',
+    'fas fa-paint-roller',
+    'fas fa-toolbox',
+    'fas fa-box',
+    'fas fa-calendar-alt',
+    'fas fa-clock',
+    'fas fa-user-shield',
+    'fas fa-concierge-bell'
+];
+?>
+
 <div class="row">
     <div class="col-12">
         <?php if (session()->getFlashdata('pesan')) : ?>
@@ -39,8 +133,17 @@
                     </div>
                     <div class="form-group mb-3">
                         <label>Icon FontAwesome</label>
-                        <input type="text" class="form-control" name="icon" placeholder="Contoh: fas fa-wifi">
-                        <small class="text-muted">Opsional. Cari icon di fontawesome.com</small>
+                        <input type="text" class="form-control mb-2" name="icon" id="input-icon-tambah" placeholder="Pilih icon dari kotak di bawah">
+                        <small class="text-muted">Pilih icon dari galeri di bawah:</small>
+
+                        <!-- Kotak Grid Banyak Icon (Bisa Di-scroll) -->
+                        <div class="icon-picker-grid mt-1">
+                            <?php foreach ($array_icon as $ic): ?>
+                                <button type="button" class="btn btn-outline-secondary icon-option-btn select-icon-tambah" data-icon="<?= $ic; ?>" title="<?= $ic; ?>">
+                                    <i class="<?= $ic; ?>"></i>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
                 <div class="card-footer">
@@ -105,7 +208,17 @@
                                                 </div>
                                                 <div class="form-group mb-3">
                                                     <label>Icon</label>
-                                                    <input type="text" class="form-control" name="icon" value="<?= esc($f['icon']); ?>">
+                                                    <input type="text" class="form-control mb-2" name="icon" id="input-icon-edit-<?= $f['id']; ?>" value="<?= esc($f['icon']); ?>">
+                                                    <small class="text-muted">Pilih icon dari galeri di bawah:</small>
+
+                                                    <!-- Kotak Grid Banyak Icon untuk Edit -->
+                                                    <div class="icon-picker-grid mt-1">
+                                                        <?php foreach ($array_icon as $ic): ?>
+                                                            <button type="button" class="btn btn-outline-secondary icon-option-btn select-icon-edit" data-id="<?= $f['id']; ?>" data-icon="<?= $ic; ?>" title="<?= $ic; ?>">
+                                                                <i class="<?= $ic; ?>"></i>
+                                                            </button>
+                                                        <?php endforeach; ?>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
@@ -123,4 +236,25 @@
         </div>
     </div>
 </div>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script>
+    $(document).ready(function() {
+        $(document).on('click', '.select-icon-tambah', function() {
+            let iconClass = $(this).data('icon');
+            $('#input-icon-tambah').val(iconClass);
+            $(this).parent().find('.icon-option-btn').removeClass('btn-primary').addClass('btn-outline-secondary');
+            $(this).removeClass('btn-outline-secondary').addClass('btn-primary');
+        });
+
+        $(document).on('click', '.select-icon-edit', function() {
+            let id = $(this).data('id');
+            let iconClass = $(this).data('icon');
+            $('#input-icon-edit-' + id).val(iconClass);
+            $(this).parent().find('.icon-option-btn').removeClass('btn-primary').addClass('btn-outline-secondary');
+            $(this).removeClass('btn-outline-secondary').addClass('btn-primary');
+        });
+    });
+</script>
 <?= $this->endSection() ?>
