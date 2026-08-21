@@ -92,7 +92,7 @@
                             <h2 class="fw-bold text-teal"><i class="fas fa-door-open text-primary"></i> E-KOS</h2>
                         </div>
                         <h3 class="fw-bold mb-1">Selamat Datang!</h3>
-                        <p class="text-muted mb-4">Silakan masukkan username dan password Anda.</p>
+                        <p class="text-muted mb-4">Silakan masukkan email dan password Anda.</p>
 
                         <!-- Tampilkan Error/Pesan -->
                         <?php if (session()->getFlashdata('error')) : ?>
@@ -105,10 +105,10 @@
                         <form action="<?= base_url('auth/proses') ?>" method="POST">
                             <?= csrf_field() ?>
                             <div class="mb-3">
-                                <label class="fw-bold small mb-2">Username</label>
+                                <label class="fw-bold small mb-2">Email</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0" style="border-radius: 12px 0 0 12px;"><i class="fas fa-user text-muted"></i></span>
-                                    <input type="text" class="form-control border-start-0" name="username" placeholder="Masukkan username Anda" required>
+                                    <span class="input-group-text bg-light border-end-0" style="border-radius: 12px 0 0 12px;"><i class="fas fa-envelope text-muted"></i></span>
+                                    <input type="email" class="form-control border-start-0" name="email" placeholder="Masukkan email Anda" required>
                                 </div>
                             </div>
                             <div class="mb-4">

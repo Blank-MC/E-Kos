@@ -51,19 +51,83 @@
     </div>
 </div>
 
-<!-- Area Grafik -->
+<!-- Area Grafik Pendapatan -->
 <div class="row mt-3">
     <div class="col-12">
         <div class="card card-primary card-outline shadow-sm">
-            <div class="card-header border-0">
-                <h3 class="card-title fw-bold">Grafik Pendapatan Tahun Ini</h3>
+            <div class="card-header border-0 d-flex justify-content-between align-items-center bg-white">
+                <h3 class="card-title fw-bold text-dark m-0">
+                    <i class="fas fa-chart-line text-primary mr-2"></i>Grafik Pendapatan Tahun <?= esc($tahun_ini); ?>
+                </h3>
             </div>
-            <div class="card-body text-center py-5 text-muted">
-                <i class="fas fa-chart-bar fa-4x mb-3 text-light"></i>
-                <h5>Area Grafik Chart.js</h5>
-                <p class="small">Grafik akan dirender di sini setelah data transaksi beroperasi penuh.</p>
+            <div class="card-body">
+                <div style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="incomeChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Script Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('incomeChart').getContext('2d');
+        const dataPendapatan = <?= json_encode($grafik_pendapatan ?? array_fill(0, 12, 0)); ?>;
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                datasets: [{
+                    label: 'Pendapatan (Rp)',
+                    data: dataPendapatan,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.12)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#007bff',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ' Pendapatan: Rp ' + context.parsed.y.toLocaleString('id-ID');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rp ' + (value / 1000).toLocaleString('id-ID') + 'k';
+                            }
+                        },
+                        grid: {
+                            color: '#e9ecef'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 <?= $this->endSection() ?>

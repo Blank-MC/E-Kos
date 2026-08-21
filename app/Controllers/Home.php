@@ -9,29 +9,50 @@ class Home extends BaseController
     public function index()
     {
         $kamarModel = new KamarModel();
+        $db = \Config\Database::connect();
+
+        // Ambil data pengaturan kos
+        $pengaturan = $db->table('pengaturan')->get()->getRowArray();
 
         $data = [
-            'title' => 'E-Kos | Hunian Nyaman Seperti Di Rumah',
-            'kamar' => $kamarModel->findAll()
+            'title'      => ($pengaturan['nama_kos'] ?? 'E-Kos') . ' | Hunian Nyaman Seperti Di Rumah',
+            'kamar'      => $kamarModel->findAll(),
+            'pengaturan' => $pengaturan
         ];
 
         return view('guest/home', $data);
     }
 
-    // FUNGSI BARU UNTUK DETAIL KAMAR
+    // FUNGSI UNTUK DETAIL KAMAR
     public function detail($id)
     {
         $kamarModel = new KamarModel();
-        $kamar = $kamarModel->find($id);
+        $db = \Config\Database::connect();
 
-        // Jika ID kamar tidak ada di database, lemparkan error 404
+        $kamar = $kamarModel->find($id);
+        $pengaturan = $db->table('pengaturan')->get()->getRowArray();
+
         if (!$kamar) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Kamar tidak ditemukan');
         }
 
+        // Ambil Fasilitas Kamar Berdasarkan Relasi Many-to-Many
+        $fasilitas = $db->table('kamar_fasilitas')
+            ->join('fasilitas', 'fasilitas.id = kamar_fasilitas.id_fasilitas')
+            ->where('kamar_fasilitas.id_kamar', $id)
+            ->get()->getResultArray();
+
+        // Ambil Galeri Multi-Foto Tambahan dari tabel `kamar_foto`
+        $galeriFoto = $db->table('kamar_foto')
+            ->where('id_kamar', $id)
+            ->get()->getResultArray();
+
         $data = [
-            'title' => 'Detail Kamar | ' . $kamar['nama_kamar'],
-            'kamar' => $kamar
+            'title'       => 'Detail Kamar | ' . $kamar['nama_kamar'],
+            'kamar'       => $kamar,
+            'fasilitas'   => $fasilitas,
+            'galeriFoto'  => $galeriFoto,
+            'pengaturan'  => $pengaturan
         ];
 
         return view('guest/detail', $data);
@@ -41,16 +62,20 @@ class Home extends BaseController
     public function pesan($id)
     {
         $kamarModel = new \App\Models\KamarModel();
-        $kamar = $kamarModel->find($id);
+        $db = \Config\Database::connect();
 
-        // Validasi: Kalau kamar gak ada atau statusnya penuh, lempar balik ke beranda
-        if (!$kamar || $kamar['status'] != 'Tersedia') {
+        $kamar = $kamarModel->find($id);
+        $pengaturan = $db->table('pengaturan')->get()->getRowArray();
+
+        // Validasi: Status di database adalah 'kosong'
+        if (!$kamar || $kamar['status'] != 'kosong') {
             return redirect()->to('/')->with('error', 'Maaf, kamar tersebut tidak tersedia atau sudah penuh.');
         }
 
         $data = [
-            'title' => 'Form Pemesanan & Registrasi | E-Kos',
-            'kamar' => $kamar
+            'title'      => 'Form Pemesanan & Registrasi | ' . ($pengaturan['nama_kos'] ?? 'E-Kos'),
+            'kamar'      => $kamar,
+            'pengaturan' => $pengaturan
         ];
 
         return view('guest/pesan', $data);
@@ -61,28 +86,30 @@ class Home extends BaseController
     {
         $db = \Config\Database::connect();
 
-        // 1. Ambil data inputan form
-        $id_kamar = $this->request->getPost('id_kamar');
-        $harga_kamar = $this->request->getPost('harga_kamar');
-        $nama = $this->request->getPost('nama');
-        $email = $this->request->getPost('email'); // Menggunakan Email
-        $password = $this->request->getPost('password');
-        $no_hp = $this->request->getPost('no_hp');
-
-        // Konversi Jenis Kelamin ke format DB (L / P)
-        $jk_input = $this->request->getPost('jenis_kelamin');
+        $id_kamar      = $this->request->getPost('id_kamar');
+        $harga_kamar   = $this->request->getPost('harga_kamar');
+        $nama          = $this->request->getPost('nama');
+        $email         = $this->request->getPost('email');
+        $password      = $this->request->getPost('password');
+        $no_hp         = $this->request->getPost('no_hp');
+        $jk_input      = $this->request->getPost('jenis_kelamin');
         $jenis_kelamin = ($jk_input == 'Laki-laki') ? 'L' : 'P';
-
         $tanggal_masuk = $this->request->getPost('tanggal_masuk');
-        $durasi_sewa = $this->request->getPost('durasi_sewa');
+        $durasi_sewa   = (int)$this->request->getPost('durasi_sewa');
 
-        // Validasi: Cek apakah Email sudah terdaftar di tabel users
+        // Validasi ketersediaan kamar
+        $cekKamar = $db->table('kamar')->where('id', $id_kamar)->get()->getRowArray();
+        if (!$cekKamar || $cekKamar['status'] != 'kosong') {
+            return redirect()->to('/')->with('error', 'Maaf, kamar ini baru saja dipesan oleh orang lain.');
+        }
+
+        // Cek email ganda
         $cekUser = $db->table('users')->where('email', $email)->get()->getRowArray();
         if ($cekUser) {
             return redirect()->back()->with('error', 'Email sudah terdaftar. Silakan gunakan email lain atau login.');
         }
 
-        // 2. Proses Upload Bukti Bayar
+        // Upload Bukti Bayar
         $fileBukti = $this->request->getFile('bukti_bayar');
         $namaFileBukti = '';
         if ($fileBukti && $fileBukti->isValid() && !$fileBukti->hasMoved()) {
@@ -90,51 +117,60 @@ class Home extends BaseController
             $fileBukti->move('uploads/bukti/', $namaFileBukti);
         }
 
-        // --- MULAI TRANSAKSI DATABASE (Aman dari kegagalan parsial) ---
+        // Hitung Tanggal Selesai dan Jatuh Tempo (ditambah durasi bulan)
+        $tgl_selesai = date('Y-m-d', strtotime("+$durasi_sewa month", strtotime($tanggal_masuk)));
+        $tgl_jatuh_tempo = $tgl_selesai;
+
         $db->transStart();
 
-        // 3. Insert ke Tabel `users`
+        // 1. Kunci Status Kamar
+        $db->table('kamar')->where('id', $id_kamar)->update([
+            'status' => 'terisi'
+        ]);
+
+        // 2. Insert ke Tabel `users`
         $db->table('users')->insert([
             'nama'     => $nama,
             'email'    => $email,
             'password' => password_hash($password, PASSWORD_DEFAULT),
             'no_hp'    => $no_hp,
             'role'     => 'penghuni',
-            'status'   => 'nonaktif' // Menunggu admin konfirmasi
+            'status'   => 'nonaktif'
         ]);
         $id_user = $db->insertID();
 
-        // 4. Insert ke Tabel `penghuni`
+        // 3. Insert ke Tabel `penghuni`
         $db->table('penghuni')->insert([
             'id_user'       => $id_user,
             'jenis_kelamin' => $jenis_kelamin
         ]);
         $id_penghuni = $db->insertID();
 
-        // 5. Insert ke Tabel `sewa`
+        // 4. Insert ke Tabel `sewa`
         $db->table('sewa')->insert([
-            'id_kamar'    => $id_kamar,
-            'id_penghuni' => $id_penghuni,
-            'tgl_mulai'   => $tanggal_masuk,
+            'id_kamar'     => $id_kamar,
+            'id_penghuni'  => $id_penghuni,
+            'tgl_mulai'    => $tanggal_masuk,
             'durasi_bulan' => $durasi_sewa,
-            'status'      => 'pending'
+            'tgl_selesai'  => $tgl_selesai,
+            'status'       => 'pending'
         ]);
         $id_sewa = $db->insertID();
 
-        // 6. Insert ke Tabel `tagihan`
+        // 5. Insert ke Tabel `tagihan`
         $total_tagihan = $harga_kamar * $durasi_sewa;
-        $periode = date('F Y', strtotime($tanggal_masuk)); // Format: Agustus 2026
+        $periode = date('F Y', strtotime($tanggal_masuk));
 
         $db->table('tagihan')->insert([
             'id_sewa'         => $id_sewa,
             'periode_bulan'   => $periode,
             'jumlah'          => $total_tagihan,
-            'tgl_jatuh_tempo' => $tanggal_masuk,
+            'tgl_jatuh_tempo' => $tgl_jatuh_tempo,
             'status'          => 'menunggu_konfirmasi'
         ]);
         $id_tagihan = $db->insertID();
 
-        // 7. Insert ke Tabel `pembayaran`
+        // 6. Insert ke Tabel `pembayaran`
         if ($namaFileBukti != '') {
             $db->table('pembayaran')->insert([
                 'id_tagihan'     => $id_tagihan,
@@ -144,14 +180,12 @@ class Home extends BaseController
             ]);
         }
 
-        // --- SELESAI TRANSAKSI ---
         $db->transComplete();
 
         if ($db->transStatus() === FALSE) {
-            // Jika ada satu proses gagal, kembalikan error
             return redirect()->back()->with('error', 'Terjadi kesalahan sistem. Pengajuan gagal diproses.');
         }
 
-        return redirect()->to('/')->with('pesan', 'Pengajuan sewa & pendaftaran akun berhasil dikirim! Silakan tunggu konfirmasi dari Admin.');
+        return redirect()->to('/')->with('pesan', 'Pengajuan sewa & pendaftaran akun berhasil dikirim!');
     }
 }

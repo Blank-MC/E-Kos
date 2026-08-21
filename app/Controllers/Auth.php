@@ -13,7 +13,7 @@ class Auth extends BaseController
             if (session()->get('role') == 'admin') {
                 return redirect()->to('/admin');
             } else {
-                return redirect()->to('/penghuni/dashboard'); // Nanti kita buat rutenya
+                return redirect()->to('/penghuni/dashboard');
             }
         }
 
@@ -27,8 +27,8 @@ class Auth extends BaseController
     {
         $db = \Config\Database::connect();
 
-        // 1. Ambil Email bukan Username
-        $email = $this->request->getPost('username'); // name input di view bebas, tapi nilainya email
+        // 1. Ambil input email langsung dari form
+        $email = $this->request->getPost('email');
         $password = $this->request->getPost('password');
 
         // Cari user berdasarkan email
@@ -37,8 +37,8 @@ class Auth extends BaseController
         if ($user) {
             if (password_verify($password, $user['password'])) {
 
-                // 2. Sesuaikan pengecekan status
-                if ($user['status'] == 'nonaktif') {
+                // 2. Sesuaikan pengecekan status (apakah nonaktif)
+                if (isset($user['status']) && $user['status'] == 'nonaktif') {
                     return redirect()->back()->with('error', 'Akun Anda belum diaktifkan atau masih menunggu konfirmasi.');
                 }
 

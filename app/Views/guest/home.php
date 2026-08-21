@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= isset($title) ? $title : 'E-Kos | Hunian Nyaman Seperti Di Rumah' ?></title>
+    <title><?= esc($title) ?></title>
 
     <!-- BOOTSTRAP 5 LOKAL (Murni) -->
     <link rel="stylesheet" href="<?= base_url('assets/css/bootstrap.min.css') ?>">
@@ -132,6 +132,10 @@
             background: #ef4444;
         }
 
+        .status-badge.maintenance {
+            background: #f59e0b;
+        }
+
         .btn-custom {
             background-color: var(--primary);
             color: white;
@@ -195,7 +199,7 @@
         <div class="container">
             <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2 text-dark" href="<?= base_url() ?>">
                 <i class="fas fa-door-open text-primary fs-3"></i>
-                E-KOS
+                <?= esc($pengaturan['nama_kos'] ?? 'E-KOS') ?>
             </a>
             <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <i class="fas fa-bars fs-3"></i>
@@ -213,7 +217,7 @@
         </div>
     </nav>
 
-    <!-- Letakkan tepat di bawah </nav> -->
+    <!-- Notifikasi Flash Message -->
     <?php if (session()->getFlashdata('pesan')) : ?>
         <div class="container" style="margin-top: 90px; margin-bottom: -100px; position: relative; z-index: 10;">
             <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4 border-0" role="alert">
@@ -240,16 +244,18 @@
             <div class="row align-items-center">
                 <div class="col-lg-6">
                     <span class="badge bg-warning text-dark px-3 py-2 rounded-pill mb-3 fw-bold fs-6">
-                        <i class="fas fa-star me-1"></i> Kos Pria & Wanita (Beda Lantai)
+                        <i class="fas fa-star me-1"></i> Hunian Nyaman & Terpercaya
                     </span>
                     <h1 class="display-4 fw-bold mb-3" style="line-height: 1.2;">
                         Kenyamanan Ngekos <br> Serasa di <span class="highlight-text">Rumah Sendiri</span>
                     </h1>
-                    <p class="text-muted fs-5 mb-5 pe-lg-4">Fasilitas lengkap, bersih, lingkungan aman, dan bebas jam malam (bawa kunci gerbang sendiri). Sangat cocok untuk mahasiswa dan karyawan.</p>
+                    <p class="text-muted fs-5 mb-4 pe-lg-4">
+                        <?= esc($pengaturan['deskripsi'] ?? 'Fasilitas lengkap, bersih, lingkungan aman, dan strategis. Sangat cocok untuk mahasiswa dan karyawan.') ?>
+                    </p>
 
                     <div class="d-flex flex-wrap gap-3">
                         <a href="#kamar" class="btn btn-custom btn-lg"><i class="fas fa-bed me-2"></i> Lihat Tipe Kamar</a>
-                        <a href="https://wa.me/6281234567890" class="btn btn-outline-custom btn-lg" target="_blank"><i class="fab fa-whatsapp me-2"></i> Tanya Admin</a>
+                        <a href="https://wa.me/<?= esc($pengaturan['no_telp'] ?? '6281234567890') ?>" class="btn btn-outline-custom btn-lg" target="_blank"><i class="fab fa-whatsapp me-2"></i> Tanya Admin</a>
                     </div>
 
                     <div class="mt-5 d-flex align-items-center gap-4 text-muted fw-semibold">
@@ -259,9 +265,7 @@
                     </div>
                 </div>
                 <div class="col-lg-6 d-none d-lg-block">
-                    <!-- Foto suasana kos-kosan -->
                     <div class="position-relative">
-                        <!-- Nanti ganti 'uploads/hero-kos.jpg' dengan foto asli kos lu -->
                         <img src="<?= base_url('uploads/hero-kos.jpg') ?>" onerror="this.src='https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=1000&auto=format&fit=crop'" class="img-fluid rounded-4 shadow-lg" alt="Suasana Kos" style="height: 450px; width: 100%; object-fit: cover; border: 8px solid white;">
 
                         <div class="position-absolute bg-white p-3 rounded-4 shadow" style="bottom: -20px; left: -30px;">
@@ -286,52 +290,52 @@
         <div class="container">
             <div class="text-center mb-5">
                 <h5 class="text-primary fw-bold mb-2">Pilihan Kamar</h5>
-                <h2 class="fw-bold m-0">Tipe Kamar di E-Kos</h2>
+                <h2 class="fw-bold m-0">Tipe Kamar di <?= esc($pengaturan['nama_kos'] ?? 'E-Kos') ?></h2>
                 <p class="text-muted mt-2">Pilih tipe kamar yang sesuai dengan kebutuhan dan budgetmu.</p>
             </div>
 
             <div class="row justify-content-center g-4">
-
                 <?php if (!empty($kamar)) : ?>
                     <?php foreach ($kamar as $k) : ?>
                         <div class="col-lg-4 col-md-6">
                             <div class="tipe-card position-relative h-100 d-flex flex-column">
 
-                                <!-- Cek Status Kamar -->
-                                <?php if ($k['status'] == 'Tersedia') : ?>
+                                <!-- Cek Status Kamar Berdasarkan Enum Database ('kosong', 'terisi', 'maintenance') -->
+                                <?php if ($k['status'] == 'kosong') : ?>
                                     <span class="status-badge"><i class="fas fa-check-circle me-1"></i> Tersedia</span>
-                                <?php else : ?>
+                                <?php elseif ($k['status'] == 'terisi') : ?>
                                     <span class="status-badge penuh"><i class="fas fa-times-circle me-1"></i> Penuh</span>
+                                <?php else : ?>
+                                    <span class="status-badge maintenance"><i class="fas fa-tools me-1"></i> Maintenance</span>
                                 <?php endif; ?>
 
-                                <!-- Gambar Kamar -->
-                                <img src="<?= base_url('uploads/kamar/' . $k['foto']) ?>" class="tipe-img" alt="<?= esc($k['nama_kamar']) ?>" onerror="this.src='https://via.placeholder.com/400x300?text=Kamar+Kos'">
+                                <!-- Gambar Kamar (Menggunakan kolom foto_utama dari DB) -->
+                                <img src="<?= base_url('uploads/kamar/' . ($k['foto_utama'] ?? 'default.jpg')) ?>" class="tipe-img" alt="<?= esc($k['nama_kamar']) ?>" onerror="this.src='https://via.placeholder.com/400x300?text=Kamar+Kos'">
 
                                 <div class="card-body p-4 d-flex flex-column flex-grow-1">
-                                    <h4 class="fw-bold mb-1 <?= $k['status'] != 'Tersedia' ? 'text-muted' : '' ?>"><?= esc($k['nama_kamar']) ?></h4>
+                                    <h4 class="fw-bold mb-1 <?= $k['status'] != 'kosong' ? 'text-muted' : '' ?>"><?= esc($k['nama_kamar']) ?></h4>
+                                    <p class="text-muted small mb-3"><i class="fas fa-ruler-combined me-1"></i> Ukuran: <?= esc($k['ukuran'] ?? 'Standar') ?></p>
 
-                                    <p class="text-muted small mb-3"><i class="fas fa-ruler-combined me-1"></i> Sesuai Standar</p>
-
-                                    <!-- Placeholder Fasilitas Kamar -->
                                     <div class="row g-2 mb-4 text-muted small fw-semibold">
                                         <div class="col-6"><i class="fas fa-bed text-primary me-2"></i> Kasur</div>
                                         <div class="col-6"><i class="fas fa-door-open text-primary me-2"></i> Lemari</div>
-                                        <div class="col-6"><i class="fas fa-plug text-primary me-2"></i> Listrik Token</div>
+                                        <div class="col-6"><i class="fas fa-plug text-primary me-2"></i> Listrik</div>
                                         <div class="col-6"><i class="fas fa-restroom text-primary me-2"></i> Kamar Mandi</div>
                                     </div>
 
                                     <hr class="text-muted opacity-25 mt-auto">
 
-                                    <!-- Harga Kamar -->
-                                    <h3 class="fw-bold <?= $k['status'] == 'Tersedia' ? 'text-primary' : 'text-muted' ?> mb-3">
-                                        Rp <?= number_format($k['harga'], 0, ',', '.') ?><span class="fs-6 text-muted fw-normal">/bln</span>
+                                    <!-- Harga Kamar (Menggunakan kolom harga_bulanan dari DB) -->
+                                    <h3 class="fw-bold <?= $k['status'] == 'kosong' ? 'text-primary' : 'text-muted' ?> mb-3">
+                                        Rp <?= number_format($k['harga_bulanan'], 0, ',', '.') ?><span class="fs-6 text-muted fw-normal">/bln</span>
                                     </h3>
 
-                                    <!-- Logika Tombol Pesan berdasarkan Status -->
-                                    <?php if ($k['status'] == 'Tersedia') : ?>
+                                    <?php if ($k['status'] == 'kosong') : ?>
                                         <a href="<?= base_url('kamar/detail/' . $k['id']) ?>" class="btn btn-custom w-100 mt-auto">Lihat Detail & Pesan</a>
-                                    <?php else : ?>
+                                    <?php elseif ($k['status'] == 'terisi') : ?>
                                         <button class="btn btn-secondary w-100 fw-bold mt-auto" disabled>Kamar Penuh</button>
+                                    <?php else : ?>
+                                        <button class="btn btn-warning w-100 fw-bold mt-auto" disabled>Sedang Perbaikan</button>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -343,7 +347,6 @@
                         <h4 class="text-muted fw-bold">Data kamar belum tersedia.</h4>
                     </div>
                 <?php endif; ?>
-
             </div>
         </div>
     </section>
@@ -389,14 +392,51 @@
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white py-4 text-center mt-5">
+    <!-- Footer Modern & Rapi -->
+    <footer class="bg-dark text-white pt-5 pb-4 mt-5">
         <div class="container">
-            <p class="mb-0">&copy; 2026 E-Kos. Seluruh Hak Cipta Dilindungi.</p>
+            <div class="row g-4 justify-content-between">
+                <!-- Kolom 1: Info Kos -->
+                <div class="col-lg-5 col-md-6">
+                    <h4 class="fw-bold text-white mb-3 d-flex align-items-center gap-2">
+                        <i class="fas fa-door-open text-info"></i> <?= esc($pengaturan['nama_kos'] ?? 'E-KOS') ?>
+                    </h4>
+                    <p class="text-light small mb-3">
+                        <?= esc($pengaturan['deskripsi'] ?? 'Hunian kos nyaman, aman, dan strategis untuk mahasiswa serta karyawan.') ?>
+                    </p>
+                </div>
+
+                <!-- Kolom 2: Kontak & Alamat -->
+                <div class="col-lg-5 col-md-6">
+                    <h5 class="fw-bold mb-3 fs-6 text-uppercase text-light">Hubungi Kami</h5>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2 d-flex align-items-start gap-2 text-light">
+                            <i class="fas fa-map-marker-alt text-danger mt-1"></i>
+                            <span><?= esc($pengaturan['alamat'] ?? 'Alamat belum diatur') ?></span>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center gap-2 text-light">
+                            <i class="fas fa-phone text-success"></i>
+                            <span><?= esc($pengaturan['no_telp'] ?? '-') ?></span>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center gap-2 text-light">
+                            <i class="fas fa-envelope text-info"></i>
+                            <span><?= esc($pengaturan['email'] ?? '-') ?></span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <hr class="border-secondary my-4 opacity-50">
+
+            <div class="row align-items-center">
+                <div class="col-md-12 text-center text-light small">
+                    <p class="mb-0">&copy; 2026 <strong><?= esc($pengaturan['nama_kos'] ?? 'E-Kos') ?></strong>. Seluruh Hak Cipta Dilindungi.</p>
+                </div>
+            </div>
         </div>
     </footer>
 
-    <!-- JS BOOTSTRAP LOKAL (Bukan AdminLTE) -->
+    <!-- JS BOOTSTRAP LOKAL -->
     <script src="<?= base_url('assets/jquery/jquery-3.7.1.min.js') ?>"></script>
     <script src="<?= base_url('assets/js/bootstrap.bundle.min.js') ?>"></script>
 </body>

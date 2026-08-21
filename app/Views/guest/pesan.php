@@ -96,7 +96,7 @@
     <nav class="navbar navbar-light navbar-kos fixed-top py-3">
         <div class="container d-flex justify-content-center">
             <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2 text-dark m-0" href="<?= base_url() ?>">
-                <i class="fas fa-door-open text-primary fs-3"></i> E-KOS Checkout
+                <i class="fas fa-door-open text-primary fs-3"></i> <?= esc($pengaturan['nama_kos'] ?? 'E-KOS') ?> Checkout
             </a>
         </div>
     </nav>
@@ -106,10 +106,17 @@
             <i class="fas fa-arrow-left me-2"></i> Kembali ke Detail Kamar
         </a>
 
+        <?php if (session()->getFlashdata('error')) : ?>
+            <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 mb-4" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i> <?= session()->getFlashdata('error') ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+
         <form action="<?= base_url('pesan/store') ?>" method="POST" enctype="multipart/form-data">
             <?= csrf_field(); ?>
             <input type="hidden" name="id_kamar" value="<?= $kamar['id']; ?>">
-            <input type="hidden" name="harga_kamar" value="<?= $kamar['harga']; ?>">
+            <input type="hidden" name="harga_kamar" value="<?= $kamar['harga_bulanan']; ?>">
 
             <div class="row g-4">
                 <!-- Kolom Kiri: Form -->
@@ -173,7 +180,7 @@
                             <div class="col-12 mt-4">
                                 <div class="alert alert-info rounded-3 border-0">
                                     <h6 class="fw-bold mb-2"><i class="fas fa-wallet me-2"></i>Instruksi Pembayaran</h6>
-                                    <p class="small mb-0">Silakan transfer biaya sewa (Bisa DP minimal 50% atau Lunas) ke rekening berikut:<br>
+                                    <p class="small mb-0">Silakan transfer biaya sewa ke rekening pemilik kos:<br>
                                         <strong>BCA: 1234567890 a.n Pemilik Kos</strong><br>
                                         Setelah transfer, wajib upload bukti resi di bawah ini.
                                     </p>
@@ -195,16 +202,16 @@
                         <h5 class="fw-bold border-bottom pb-3 mb-4">Ringkasan Pesanan</h5>
 
                         <div class="d-flex gap-3 mb-3">
-                            <img src="<?= base_url('uploads/kamar/' . $kamar['foto']) ?>" class="rounded-3" width="80" height="80" style="object-fit: cover;">
+                            <img src="<?= base_url('uploads/kamar/' . ($kamar['foto_utama'] ?? 'default.jpg')) ?>" class="rounded-3" width="80" height="80" style="object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=200&auto=format&fit=crop'">
                             <div>
                                 <h6 class="fw-bold mb-1"><?= esc($kamar['nama_kamar']) ?></h6>
-                                <p class="text-muted small mb-0"><i class="fas fa-map-marker-alt me-1"></i> E-Kos Residence</p>
+                                <p class="text-muted small mb-0"><i class="fas fa-map-marker-alt me-1"></i> <?= esc($pengaturan['nama_kos'] ?? 'E-Kos') ?></p>
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-between mb-2 small text-muted">
                             <span>Harga per bulan</span>
-                            <span class="fw-bold text-dark">Rp <?= number_format($kamar['harga'], 0, ',', '.') ?></span>
+                            <span class="fw-bold text-dark">Rp <?= number_format($kamar['harga_bulanan'], 0, ',', '.') ?></span>
                         </div>
                         <div class="d-flex justify-content-between mb-4 small text-muted">
                             <span>Status Kamar</span>
