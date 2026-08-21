@@ -6,6 +6,15 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
+
+$routes->get('/', 'Home::index');
+$routes->get('kamar', 'Home::kamar');
+$routes->get('kamar/detail/(:num)', 'Home::detail/$1');
+$routes->get('pesan/(:num)', 'Home::pesan/$1');
+$routes->post('pesan/store', 'Home::storePesan');
+$routes->get('login', 'Auth::login');
+
+
 // Grouping Route khusus halaman Admin
 $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($routes) {
     // Rute utama ketika mengakses /admin
