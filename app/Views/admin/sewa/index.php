@@ -62,10 +62,13 @@
                                     <td class="font-weight-bold text-success">Rp <?= number_format($s['total_tagihan'], 0, ',', '.'); ?></td>
 
                                     <td class="text-center">
-                                        <?php if ($s['status'] == 'Pending') : ?>
+                                        <!-- Penyesuaian status sesuai database ekos_db.sql -->
+                                        <?php if ($s['status'] == 'pending') : ?>
                                             <span class="badge badge-warning text-dark"><i class="fas fa-clock mr-1"></i> Menunggu Konfirmasi</span>
-                                        <?php elseif ($s['status'] == 'Berjalan') : ?>
+                                        <?php elseif ($s['status'] == 'aktif') : ?>
                                             <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> Aktif</span>
+                                        <?php elseif ($s['status'] == 'selesai') : ?>
+                                            <span class="badge badge-secondary"><i class="fas fa-check-double mr-1"></i> Selesai</span>
                                         <?php else : ?>
                                             <span class="badge badge-danger"><i class="fas fa-times-circle mr-1"></i> Ditolak</span>
                                         <?php endif; ?>
@@ -78,8 +81,8 @@
                                         </button>
 
                                         <!-- Tombol Aksi Jika Status Masih Pending -->
-                                        <?php if ($s['status'] == 'Pending') : ?>
-                                            <a href="<?= base_url('admin/sewa/status/' . $s['id'] . '/approve') ?>" class="btn btn-sm btn-success" onclick="return confirm('Setujui pengajuan ini? Kamar akan otomatis menjadi penuh.');" title="Setujui">
+                                        <?php if ($s['status'] == 'pending') : ?>
+                                            <a href="<?= base_url('admin/sewa/status/' . $s['id'] . '/approve') ?>" class="btn btn-sm btn-success" onclick="return confirm('Setujui pengajuan ini? Kamar akan otomatis menjadi terisi.');" title="Setujui">
                                                 <i class="fas fa-check"></i>
                                             </a>
                                             <a href="<?= base_url('admin/sewa/status/' . $s['id'] . '/reject') ?>" class="btn btn-sm btn-danger" onclick="return confirm('Tolak pengajuan ini?');" title="Tolak">
@@ -89,7 +92,7 @@
                                     </td>
                                 </tr>
 
-                                <!-- Modal Lihat Bukti Transfer (Muncul saat tombol Cek Bukti diklik) -->
+                                <!-- Modal Lihat Bukti Transfer -->
                                 <div class="modal fade" id="modalBukti<?= $s['id']; ?>" tabindex="-1" role="dialog" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered" role="document">
                                         <div class="modal-content">
