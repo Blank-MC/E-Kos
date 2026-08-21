@@ -1,68 +1,77 @@
-# CodeIgniter 4 Application Starter
+# 🏢 E-Kos Indonesia - Sistem Manajemen Kos Modern
 
-## What is CodeIgniter?
+[![CodeIgniter](https://img.shields.io/badge/Framework-CodeIgniter%204-EF4444?style=flat-square&logo=codeigniter&logoColor=white)](https://codeigniter.com/)
+[![Bootstrap](https://img.shields.io/badge/UI-Bootstrap%205-7952B3?style=flat-square&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
+[![MySQL](https://img.shields.io/badge/Database-MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+**E-Kos Indonesia** adalah aplikasi berbasis web yang dirancang untuk mengotomatisasi seluruh siklus manajemen kos-kosan. Sistem ini mengintegrasikan portal landing page publik untuk calon penyewa, panel kontrol terpusat untuk Administrator, dan portal mandiri (_self-service_) bagi Penghuni kos.
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+---
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+## 🌟 Fitur Utama
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+### 🌐 1. Publik / Calon Penghuni (Guest)
 
-## Installation & updates
+- **Katalog Kamar Interaktif:** Menampilkan detail kamar, spesifikasi ukuran, daftar fasilitas, serta galeri foto kamar.
+- **Filter & Pencarian:** Navigasi cepat berdasarkan tipe dan ketersediaan kamar.
+- **Pemesanan Mandiri (Self Booking):** Alur registrasi pemesanan instan yang otomatis mengunci status kamar dan membuat akun penghuni.
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+### 👤 2. Panel Penghuni
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+- **Dashboard Ringkas:** Menampilkan data kamar yang disewa, durasi sewa, dan ringkasan tagihan berjalan.
+- **Manajemen & Pembayaran Tagihan:**
+  - Penghitungan otomatis masa tenggat jatuh tempo (_countdown_ sisa hari).
+  - Upload bukti transfer pembayaran dengan status verifikasi _real-time_.
+  - Tagihan bulan berikutnya terbit secara otomatis (_Auto-Generate_).
+- **Pusat Pengaduan:** Layanan pengajuan keluhan/kerusakan fasilitas kos langsung ke pihak pengelola kos.
+- **Profil & Keamanan:** Pembaruan data diri, upload berkas KTP, dan penggantian kata sandi berenkripsi.
 
-## Setup
+### 🛠️ 3. Panel Admin (Pengelola Kos)
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+- **Analitik Dashboard:** Statistik visual grafik pendapatan bulanan (_Chart.js_) dan ringkasan status kamar.
+- **Manajemen Kamar & Galeri:** CRUD kamar, pengaturan fasilitas, dan multi-upload foto galeri.
+- **Verifikasi Transaksi:** Konfirmasi pembayaran masuk dari penghuni dalam satu klik.
+- **Respon Pengaduan:** Penanganan dan pembaruan status keluhan penghuni (Baru, Diproses, Selesai).
+- **Manajemen Akun & Penghuni:** Reset password akun penghuni dan kontrol akses sewa.
+- **Ekspor Laporan:** Rekap data transaksi dan pendapatan kos ke format **PDF** dan **Excel (.xlsx)**.
+- **Pengaturan Kos:** Konfigurasi informasi kos, nomor kontak, rekening pembayaran, dan lokasi.
 
-## Important Change with index.php
+---
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+## ⚙️ Otomatisasi Sistem (_Business Logic Automation_)
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+- **Auto-Update Keterlambatan:** Status tagihan otomatis beralih menjadi `terlambat` jika telah melewati tanggal jatuh tempo.
+- **Auto-Generate Tagihan Baru:** Tagihan periode berikutnya otomatis terbit jika masa sewa aktif berlanjut ke bulan berikutnya.
+- **Auto-Selesai Sewa & Deaktivasi Akun:** Saat admin mengubah status kamar menjadi `kosong`, status sewa otomatis diselesaikan (`selesai`) dan akun penghuni otomatis dinonaktifkan (`nonaktif`) sehingga sesi login ditutup.
 
-**Please** read the user guide for a better explanation of how CI4 works!
+---
 
-## Repository Management
+## 💻 Tech Stack
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+- **Backend:** PHP 8.1+ & CodeIgniter 4
+- **Database:** MySQL / MariaDB
+- **Frontend:** HTML5, CSS3, JavaScript (ES6+), Bootstrap 5
+- **Libraries & Plugins:**
+  - Chart.js (Grafik & Analitik)
+  - FontAwesome 6 (Ikon antarmuka)
+  - DataTables (Tabel interaktif)
+  - Dompdf / PhpSpreadsheet (Ekspor Laporan)
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+---
 
-## Server Requirements
+## 🚀 Panduan Instalasi Lokal
 
-PHP version 7.4 or higher is required, with the following extensions installed:
+### 1. Prasyarat Sistem
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+- Web Server (Apache / Nginx / XAMPP / Laragon)
+- PHP versi **8.1** atau lebih baru (ekstensi `intl`, `mbstring`, `curl`, `gd` aktif)
+- Composer (opsional untuk manajemen dependensi)
+- MySQL Database
 
-> [!WARNING]
-> The end of life date for PHP 7.4 was November 28, 2022.
-> The end of life date for PHP 8.0 was November 26, 2023.
-> If you are still using PHP 7.4 or 8.0, you should upgrade immediately.
-> The end of life date for PHP 8.1 will be November 25, 2024.
+### 2. Kloning / Unduh Repositori
 
-Additionally, make sure that the following extensions are enabled in your PHP:
-
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+```bash
+git clone [https://github.com/username/e-kos.git](https://github.com/username/e-kos.git)
+cd e-kos
+```
