@@ -14,6 +14,14 @@ class Profil extends BaseController
 
         $db = \Config\Database::connect();
         $id_user = session()->get('id_user');
+
+        // CEK STATUS AKUN
+        $userCek = $db->table('users')->where('id', $id_user)->get()->getRowArray();
+        if (!$userCek || $userCek['status'] !== 'aktif') {
+            session()->destroy();
+            return redirect()->to('/')->with('error', 'Masa sewa Anda telah selesai dan akun telah dinonaktifkan.');
+        }
+
         $pengaturan = $db->table('pengaturan')->get()->getRowArray();
 
         $profil = $db->table('users')
@@ -40,6 +48,13 @@ class Profil extends BaseController
         $db = \Config\Database::connect();
         $id_user = session()->get('id_user');
 
+        // CEK STATUS AKUN
+        $userCek = $db->table('users')->where('id', $id_user)->get()->getRowArray();
+        if (!$userCek || $userCek['status'] !== 'aktif') {
+            session()->destroy();
+            return redirect()->to('/')->with('error', 'Masa sewa Anda telah selesai dan akun telah dinonaktifkan.');
+        }
+
         $nama           = $this->request->getPost('nama');
         $no_hp          = $this->request->getPost('no_hp');
         $nik            = $this->request->getPost('nik');
@@ -48,17 +63,14 @@ class Profil extends BaseController
         $pekerjaan      = $this->request->getPost('pekerjaan');
         $kontak_darurat = $this->request->getPost('kontak_darurat');
 
-        // Input Password
         $password_lama = $this->request->getPost('password_lama');
         $password_baru = $this->request->getPost('password_baru');
 
-        // Data Update Users
         $updateUser = [
             'nama'  => $nama,
             'no_hp' => $no_hp,
         ];
 
-        // Validasi Ganti Password jika diisi
         if (!empty($password_baru)) {
             $userCurrent = $db->table('users')->where('id', $id_user)->get()->getRowArray();
 

@@ -115,7 +115,7 @@ class Kamar extends BaseController
 
     public function update($id)
     {
-        $kamarLama = $this->kamarModel->find($id);
+        $kamarLama    = $this->kamarModel->find($id);
         $status_kamar = $this->request->getPost('status');
 
         // Handle Foto Utama
@@ -144,15 +144,39 @@ class Kamar extends BaseController
             'foto_utama'    => $namaFoto
         ]);
 
-        // 2. OTOMATISASI: Jika kamar diubah jadi 'kosong', selesaikan masa sewa yang sedang aktif
+        // 2. OTOMATISASI: Jika status diubah jadi 'kosong', selesaikan sewa & nonaktifkan akun user
         if ($status_kamar === 'kosong') {
-            $this->db->table('sewa')
-                ->where('id_kamar', $id)
-                ->where('status', 'aktif')
-                ->update([
-                    'status'      => 'selesai',
-                    'tgl_selesai' => date('Y-m-d')
-                ]);
+            $sewaAktif = $this->db->table('sewa')
+                ->select('sewa.id, penghuni.id_user')
+                ->join('penghuni', 'penghuni.id = sewa.id_penghuni')
+                ->where('sewa.id_kamar', $id)
+                ->where('sewa.status', 'aktif')
+                ->get()->getResultArray();
+
+            if (!empty($sewaAktif)) {
+                $idUsersNonaktif = [];
+                $idSewaSelesai   = [];
+
+                foreach ($sewaAktif as $row) {
+                    $idSewaSelesai[]   = $row['id'];
+                    $idUsersNonaktif[] = $row['id_user'];
+                }
+
+                // Selesaikan masa sewa
+                $this->db->table('sewa')
+                    ->whereIn('id', $idSewaSelesai)
+                    ->update([
+                        'status'      => 'selesai',
+                        'tgl_selesai' => date('Y-m-d')
+                    ]);
+
+                // Nonaktifkan akun login user penghuni
+                $this->db->table('users')
+                    ->whereIn('id', $idUsersNonaktif)
+                    ->update([
+                        'status' => 'nonaktif'
+                    ]);
+            }
         }
 
         // 3. Update Fasilitas (Hapus lalu insert ulang)

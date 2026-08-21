@@ -14,8 +14,15 @@ class Pengaduan extends BaseController
 
         $db = \Config\Database::connect();
         $id_user = session()->get('id_user');
-        $pengaturan = $db->table('pengaturan')->get()->getRowArray();
 
+        // CEK STATUS AKUN
+        $userCek = $db->table('users')->where('id', $id_user)->get()->getRowArray();
+        if (!$userCek || $userCek['status'] !== 'aktif') {
+            session()->destroy();
+            return redirect()->to('/')->with('error', 'Masa sewa Anda telah selesai dan akun telah dinonaktifkan.');
+        }
+
+        $pengaturan = $db->table('pengaturan')->get()->getRowArray();
         $penghuni = $db->table('penghuni')->where('id_user', $id_user)->get()->getRowArray();
         $pengaduan = [];
 
@@ -43,6 +50,13 @@ class Pengaduan extends BaseController
 
         $db = \Config\Database::connect();
         $id_user = session()->get('id_user');
+
+        // CEK STATUS AKUN
+        $userCek = $db->table('users')->where('id', $id_user)->get()->getRowArray();
+        if (!$userCek || $userCek['status'] !== 'aktif') {
+            session()->destroy();
+            return redirect()->to('/')->with('error', 'Masa sewa Anda telah selesai dan akun telah dinonaktifkan.');
+        }
 
         $penghuni = $db->table('penghuni')->where('id_user', $id_user)->get()->getRowArray();
 

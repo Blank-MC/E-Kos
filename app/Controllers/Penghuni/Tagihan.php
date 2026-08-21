@@ -14,9 +14,17 @@ class Tagihan extends BaseController
 
         $db = \Config\Database::connect();
         $id_user = session()->get('id_user');
+
+        // 1. CEK APAKAH AKUN DINONAKTIFKAN KARENA SEWA SELESAI
+        $userCek = $db->table('users')->where('id', $id_user)->get()->getRowArray();
+        if (!$userCek || $userCek['status'] !== 'aktif') {
+            session()->destroy();
+            return redirect()->to('/')->with('error', 'Masa sewa Anda telah selesai dan akun telah dinonaktifkan.');
+        }
+
         $todayStr = date('Y-m-d');
 
-        // 1. AUTO-UPDATE: Ubah tagihan yang lewat jatuh tempo jadi 'terlambat'
+        // 2. AUTO-UPDATE: Ubah tagihan yang lewat jatuh tempo jadi 'terlambat'
         $db->table('tagihan')
             ->where('status', 'belum_bayar')
             ->where('tgl_jatuh_tempo <', $todayStr)
@@ -25,7 +33,7 @@ class Tagihan extends BaseController
         $penghuni = $db->table('penghuni')->where('id_user', $id_user)->get()->getRowArray();
         $pengaturan = $db->table('pengaturan')->get()->getRowArray();
 
-        // 2. AUTO-GENERATE TAGIHAN BULAN BERIKUTNYA UNTUK SEWA AKTIF
+        // 3. AUTO-GENERATE TAGIHAN BULAN BERIKUTNYA UNTUK SEWA AKTIF
         if ($penghuni) {
             $sewaAktifList = $db->table('sewa')
                 ->select('sewa.*, kamar.harga_bulanan')
@@ -64,7 +72,7 @@ class Tagihan extends BaseController
             }
         }
 
-        // 3. Ambil seluruh riwayat tagihan
+        // 4. Ambil seluruh riwayat tagihan
         $tagihan = [];
         if ($penghuni) {
             $tagihan = $db->table('tagihan')
@@ -106,6 +114,15 @@ class Tagihan extends BaseController
         }
 
         $db = \Config\Database::connect();
+        $id_user = session()->get('id_user');
+
+        // Validasi Akun Aktif
+        $userCek = $db->table('users')->where('id', $id_user)->get()->getRowArray();
+        if (!$userCek || $userCek['status'] !== 'aktif') {
+            session()->destroy();
+            return redirect()->to('/')->with('error', 'Masa sewa Anda telah selesai dan akun telah dinonaktifkan.');
+        }
+
         $id_tagihan = $this->request->getPost('id_tagihan');
         $fileBukti  = $this->request->getFile('bukti_bayar');
 
