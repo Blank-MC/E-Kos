@@ -116,6 +116,7 @@ class Kamar extends BaseController
     public function update($id)
     {
         $kamarLama = $this->kamarModel->find($id);
+        $status_kamar = $this->request->getPost('status');
 
         // Handle Foto Utama
         $fileFoto = $this->request->getFile('foto_utama');
@@ -129,7 +130,9 @@ class Kamar extends BaseController
             }
         }
 
-        // Update Data Utama
+        $this->db->transStart();
+
+        // 1. Update Data Utama Kamar
         $this->kamarModel->save([
             'id'            => $id,
             'nama_kamar'    => $this->request->getPost('nama_kamar'),
@@ -137,11 +140,22 @@ class Kamar extends BaseController
             'harga_bulanan' => $this->request->getPost('harga_bulanan'),
             'deskripsi'     => $this->request->getPost('deskripsi'),
             'ukuran'        => $this->request->getPost('ukuran'),
-            'status'        => $this->request->getPost('status'),
+            'status'        => $status_kamar,
             'foto_utama'    => $namaFoto
         ]);
 
-        // Update Fasilitas (Hapus lalu insert ulang)
+        // 2. OTOMATISASI: Jika kamar diubah jadi 'kosong', selesaikan masa sewa yang sedang aktif
+        if ($status_kamar === 'kosong') {
+            $this->db->table('sewa')
+                ->where('id_kamar', $id)
+                ->where('status', 'aktif')
+                ->update([
+                    'status'      => 'selesai',
+                    'tgl_selesai' => date('Y-m-d')
+                ]);
+        }
+
+        // 3. Update Fasilitas (Hapus lalu insert ulang)
         $this->db->table('kamar_fasilitas')->where('id_kamar', $id)->delete();
         $fasilitasPilihan = $this->request->getPost('fasilitas');
         if (!empty($fasilitasPilihan)) {
@@ -153,7 +167,7 @@ class Kamar extends BaseController
             }
         }
 
-        // Tambahan Multi-Upload Galeri Foto Baru saat Edit
+        // 4. Tambahan Multi-Upload Galeri Foto Baru saat Edit
         $galeriFoto = $this->request->getFileMultiple('galeri_foto');
         if ($galeriFoto) {
             foreach ($galeriFoto as $img) {
@@ -167,6 +181,12 @@ class Kamar extends BaseController
                     ]);
                 }
             }
+        }
+
+        $this->db->transComplete();
+
+        if ($this->db->transStatus() === FALSE) {
+            return redirect()->back()->with('error', 'Gagal memperbarui data kamar.');
         }
 
         return redirect()->to('/admin/kamar')->with('pesan', 'Data kamar berhasil diupdate.');

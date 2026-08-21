@@ -65,12 +65,19 @@
 
     <!-- Kolom Kanan: Status Tagihan Terkini & Tenggat Pembayaran -->
     <div class="col-lg-6 mb-4">
-        <div class="card card-outline card-warning shadow-sm h-100">
-            <div class="card-header bg-white">
-                <h5 class="card-title fw-bold m-0 text-dark"><i class="fas fa-file-invoice-dollar text-warning mr-2"></i>Tagihan Terkini</h5>
+        <div class="card shadow-sm h-100 border-0" style="border-radius: 16px;">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                <h5 class="fw-bold m-0 text-dark"><i class="fas fa-file-invoice-dollar text-warning me-2"></i>Tagihan Terkini</h5>
             </div>
-            <div class="card-body d-flex flex-column justify-content-between">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
                 <?php if (!empty($tagihan)) : ?>
+                    <?php
+                    $today = new \DateTime(date('Y-m-d'));
+                    $due = new \DateTime($tagihan['tgl_jatuh_tempo']);
+                    $diff = $today->diff($due);
+                    $is_expired = ($today > $due);
+                    $sisa_hari = $diff->days;
+                    ?>
                     <div>
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
@@ -79,51 +86,60 @@
                             </div>
                             <div>
                                 <?php if ($tagihan['status'] == 'lunas') : ?>
-                                    <span class="badge badge-success px-3 py-2">LUNAS</span>
+                                    <span class="badge bg-success px-3 py-2">LUNAS</span>
                                 <?php elseif ($tagihan['status'] == 'menunggu_konfirmasi') : ?>
-                                    <span class="badge badge-info px-3 py-2">MENUNGGU KONFIRMASI</span>
+                                    <span class="badge bg-info px-3 py-2">MENUNGGU KONFIRMASI</span>
                                 <?php else : ?>
-                                    <span class="badge badge-danger px-3 py-2">BELUM BAYAR</span>
+                                    <span class="badge bg-danger px-3 py-2">BELUM BAYAR</span>
                                 <?php endif; ?>
                             </div>
                         </div>
 
-                        <div class="p-3 bg-light rounded mb-3 border">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Total Jumlah</span>
+                        <div class="p-3 bg-light rounded-4 mb-3 border">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Total Tagihan</span>
                                 <span class="fw-bold text-dark fs-5">Rp <?= number_format($tagihan['jumlah'], 0, ',', '.'); ?></span>
                             </div>
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Jatuh Tempo</span>
-                                <span class="fw-bold text-danger"><?= date('d F Y', strtotime($tagihan['tgl_jatuh_tempo'])); ?></span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-danger"><?= date('d F Y', strtotime($tagihan['tgl_jatuh_tempo'])); ?></span>
+                                    <?php if ($tagihan['status'] != 'lunas') : ?>
+                                        <?php if ($is_expired) : ?>
+                                            <span class="badge bg-danger text-white px-2 py-1">Telat <?= $sisa_hari; ?> Hari</span>
+                                        <?php else : ?>
+                                            <span class="badge bg-warning text-dark px-2 py-1"><?= $sisa_hari; ?> Hari Lagi</span>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Banner Durasi Sisa Waktu Jatuh Tempo -->
-                        <?php if (!empty($tenggat_info)) : ?>
-                            <?php if ($tenggat_info['status'] == 'terlambat') : ?>
-                                <div class="alert alert-danger mb-3 shadow-sm border-0">
-                                    <i class="fas fa-exclamation-triangle mr-1"></i>
-                                    <strong>Perhatian!</strong> Pembayaran Anda <?= $tenggat_info['teks']; ?>.
+                        <!-- Banner Peringatan -->
+                        <?php if ($tagihan['status'] != 'lunas') : ?>
+                            <?php if ($is_expired) : ?>
+                                <div class="alert alert-danger mb-3 border-0 rounded-3 shadow-sm">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    <strong>Perhatian!</strong> Pembayaran Anda sudah lewat tenggat waktu <strong><?= $sisa_hari; ?> hari</strong>. Harap segera lakukan pelunasan.
                                 </div>
                             <?php else : ?>
-                                <div class="alert alert-warning mb-3 shadow-sm border-0 text-dark">
-                                    <i class="fas fa-clock mr-1"></i>
-                                    <strong>Batas Pembayaran:</strong> <?= $tenggat_info['teks']; ?>.
+                                <div class="alert alert-warning mb-3 border-0 rounded-3 text-dark shadow-sm">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Batas waktu pembayaran tersisa <strong><?= $sisa_hari; ?> hari lagi</strong>.
                                 </div>
                             <?php endif; ?>
                         <?php endif; ?>
                     </div>
 
                     <div>
-                        <a href="<?= base_url('penghuni/tagihan'); ?>" class="btn btn-teal text-white w-100 font-weight-bold" style="background-color: #0d9488;">
-                            <i class="fas fa-receipt mr-1"></i> Lihat Rincian & Bayar
+                        <a href="<?= base_url('penghuni/tagihan'); ?>" class="btn btn-teal text-white w-100 py-2 fw-bold rounded-3">
+                            <i class="fas fa-receipt me-1"></i> Lihat Rincian & Bayar
                         </a>
                     </div>
                 <?php else : ?>
                     <div class="text-center py-5 text-muted my-auto">
-                        <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
-                        <p class="mb-0">Tidak ada tagihan aktif saat ini.</p>
+                        <i class="fas fa-check-circle fa-3x mb-3 text-success opacity-50"></i>
+                        <p class="mb-0">Tidak ada tagihan yang harus dibayar saat ini.</p>
                     </div>
                 <?php endif; ?>
             </div>

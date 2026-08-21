@@ -14,11 +14,58 @@ class Tagihan extends BaseController
 
         $db = \Config\Database::connect();
         $id_user = session()->get('id_user');
+        $todayStr = date('Y-m-d');
+
+        // 1. AUTO-UPDATE: Ubah tagihan yang lewat jatuh tempo jadi 'terlambat'
+        $db->table('tagihan')
+            ->where('status', 'belum_bayar')
+            ->where('tgl_jatuh_tempo <', $todayStr)
+            ->update(['status' => 'terlambat']);
 
         $penghuni = $db->table('penghuni')->where('id_user', $id_user)->get()->getRowArray();
         $pengaturan = $db->table('pengaturan')->get()->getRowArray();
-        $tagihan = [];
 
+        // 2. AUTO-GENERATE TAGIHAN BULAN BERIKUTNYA UNTUK SEWA AKTIF
+        if ($penghuni) {
+            $sewaAktifList = $db->table('sewa')
+                ->select('sewa.*, kamar.harga_bulanan')
+                ->join('kamar', 'kamar.id = sewa.id_kamar')
+                ->where('sewa.id_penghuni', $penghuni['id'])
+                ->where('sewa.status', 'aktif')
+                ->get()->getResultArray();
+
+            foreach ($sewaAktifList as $sw) {
+                $lastTagihan = $db->table('tagihan')
+                    ->where('id_sewa', $sw['id'])
+                    ->orderBy('tgl_jatuh_tempo', 'DESC')
+                    ->get()->getRowArray();
+
+                if ($lastTagihan) {
+                    if ($todayStr >= $lastTagihan['tgl_jatuh_tempo']) {
+                        $nextDue = date('Y-m-d', strtotime('+1 month', strtotime($lastTagihan['tgl_jatuh_tempo'])));
+                        $nextPeriode = date('F Y', strtotime($nextDue));
+
+                        $cekAda = $db->table('tagihan')
+                            ->where('id_sewa', $sw['id'])
+                            ->where('periode_bulan', $nextPeriode)
+                            ->countAllResults();
+
+                        if ($cekAda == 0) {
+                            $db->table('tagihan')->insert([
+                                'id_sewa'         => $sw['id'],
+                                'periode_bulan'   => $nextPeriode,
+                                'jumlah'          => $sw['harga_bulanan'],
+                                'tgl_jatuh_tempo' => $nextDue,
+                                'status'          => 'belum_bayar'
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Ambil seluruh riwayat tagihan
+        $tagihan = [];
         if ($penghuni) {
             $tagihan = $db->table('tagihan')
                 ->select('tagihan.*, sewa.id_kamar, kamar.nama_kamar, pembayaran.bukti_transfer, pembayaran.tgl_bayar')
@@ -29,7 +76,7 @@ class Tagihan extends BaseController
                 ->orderBy('tagihan.tgl_jatuh_tempo', 'DESC')
                 ->get()->getResultArray();
 
-            $today = new \DateTime(date('Y-m-d'));
+            $today = new \DateTime($todayStr);
             foreach ($tagihan as &$t) {
                 if ($t['status'] != 'lunas') {
                     $due = new \DateTime($t['tgl_jatuh_tempo']);
@@ -68,7 +115,6 @@ class Tagihan extends BaseController
 
             $db->transStart();
 
-            // Cek apakah data pembayaran untuk tagihan ini sudah pernah dibuat sebelumnya
             $cekBayar = $db->table('pembayaran')->where('id_tagihan', $id_tagihan)->get()->getRowArray();
 
             if ($cekBayar) {
@@ -86,7 +132,6 @@ class Tagihan extends BaseController
                 ]);
             }
 
-            // Ubah status tagihan menjadi menunggu konfirmasi
             $db->table('tagihan')->where('id', $id_tagihan)->update([
                 'status' => 'menunggu_konfirmasi'
             ]);
