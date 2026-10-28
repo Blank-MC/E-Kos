@@ -25,7 +25,7 @@ class Auth extends BaseController
         return view('auth/login', $data);
     }
 
-    public function processLogin()
+    public function proses_login()
     {
         $db = \Config\Database::connect();
         $email    = $this->request->getPost('email');

@@ -49,6 +49,7 @@ $routes->group('penghuni', ['namespace' => 'App\Controllers\Penghuni'], function
 $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($routes) {
     // Rute utama ketika mengakses /admin
     $routes->get('/', 'Dashboard::index');
+    $routes->get('dashboard', 'Dashboard::index');
 
     // Rute Kamar
     $routes->group('kamar', function ($routes) {
@@ -62,11 +63,15 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
     });
 
     // Rute Fasilitas
+    // Rute Fasilitas
     $routes->group('fasilitas', function ($routes) {
         $routes->get('/', 'Fasilitas::index');
         $routes->post('store', 'Fasilitas::store');
         $routes->post('update/(:num)', 'Fasilitas::update/$1');
+
+        // Tambahkan baris delete ini agar mendukung method spoofing DELETE
         $routes->get('delete/(:num)', 'Fasilitas::delete/$1');
+        $routes->delete('delete/(:num)', 'Fasilitas::delete/$1');
     });
 
     // Rute Penghuni
